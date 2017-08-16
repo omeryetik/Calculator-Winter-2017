@@ -8,14 +8,6 @@
 
 import Foundation
 
-func changeSign(_ operand: Double) -> Double {
-    return -operand
-}
-
-func multiply(op1: Double, op2: Double) -> Double {
-    return op1 * op2
-}
-
 struct CalculatorBrain {
     
     private var accumulator: Double?
@@ -28,16 +20,25 @@ struct CalculatorBrain {
     }
     
     private var operations: Dictionary<String,Operation> = [
-        "π" : Operation.constant(Double.pi),
-        "e" : Operation.constant(M_E),
-        "√" : Operation.unaryOperation(sqrt),
-        "cos" : Operation.unaryOperation(cos),
-        "±" : Operation.unaryOperation(changeSign),
-        "×" : Operation.binaryOperation({ $0 * $1 }),
-        "+" : Operation.binaryOperation({ $0 + $1 }),
-        "÷" : Operation.binaryOperation({ $0 / $1 }),
-        "−" : Operation.binaryOperation({ $0 - $1 }),
-        "=" : Operation.equals
+        "π"     : Operation.constant(Double.pi),
+        "e"     : Operation.constant(M_E),
+        "√"     : Operation.unaryOperation(sqrt),
+        "∛"     : Operation.unaryOperation({ pow($0, 1/3) }),
+        "x⁻¹"   : Operation.unaryOperation({ pow($0, -1) }),
+        "x²"    : Operation.unaryOperation({ pow($0, 2) }),
+        "x³"    : Operation.unaryOperation({ pow($0, 3) }),
+        "cos"   : Operation.unaryOperation(cos),
+        "sin"   : Operation.unaryOperation(sin),
+        "tan"   : Operation.unaryOperation(tan),
+        "log₁₀" : Operation.unaryOperation(log10),
+        "eˣ"    : Operation.unaryOperation({ pow(M_E, $0) }),
+        "±"     : Operation.unaryOperation({ -$0 }),
+        "×"     : Operation.binaryOperation({ $0 * $1 }),
+        "+"     : Operation.binaryOperation({ $0 + $1 }),
+        "÷"     : Operation.binaryOperation({ $0 / $1 }),
+        "−"     : Operation.binaryOperation({ $0 - $1 }),
+        "xʸ"    : Operation.binaryOperation({ pow($0, $1) }),
+        "="     : Operation.equals
     ]
     
     mutating func performOperation(_ symbol: String) {
