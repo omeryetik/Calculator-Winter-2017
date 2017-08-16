@@ -23,6 +23,7 @@ struct CalculatorBrain {
         "π"     : Operation.constant(Double.pi),
         "e"     : Operation.constant(M_E),
         "√"     : Operation.unaryOperation(sqrt),
+//        A1RT2 : New operations added
         "∛"     : Operation.unaryOperation({ pow($0, 1/3) }),
         "x⁻¹"   : Operation.unaryOperation({ pow($0, -1) }),
         "x²"    : Operation.unaryOperation({ pow($0, 2) }),
@@ -38,6 +39,7 @@ struct CalculatorBrain {
         "÷"     : Operation.binaryOperation({ $0 / $1 }),
         "−"     : Operation.binaryOperation({ $0 - $1 }),
         "xʸ"    : Operation.binaryOperation({ pow($0, $1) }),
+//        A1RT2
         "="     : Operation.equals
     ]
     
@@ -78,6 +80,14 @@ struct CalculatorBrain {
             return function(firstOperand, secondOperand)
         }
     }
+    
+//    A1RT3
+    private var resultIsPending: Bool {
+        get {
+            return pendingBinaryOperation != nil
+        }
+    }
+//    A1RT3
     
     mutating func setOperand(_ operand: Double) {
         accumulator = operand
