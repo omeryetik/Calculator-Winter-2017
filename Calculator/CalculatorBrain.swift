@@ -12,10 +12,12 @@ struct CalculatorBrain {
     
     private var accumulator: Double?
     
+//    Int values for operation types are added for precedence detection in 
+//    generating the description String (A1RT6)
     private enum Operation {
         case constant(Double)
         case unaryOperation((Double) -> Double)
-        case binaryOperation((Double, Double) -> Double)
+        case binaryOperation((Double, Double) -> Double, Int)
         case equals
     }
     
@@ -34,11 +36,11 @@ struct CalculatorBrain {
         "log₁₀" : Operation.unaryOperation(log10),
         "eˣ"    : Operation.unaryOperation({ pow(M_E, $0) }),
         "±"     : Operation.unaryOperation({ -$0 }),
-        "×"     : Operation.binaryOperation({ $0 * $1 }),
-        "+"     : Operation.binaryOperation({ $0 + $1 }),
-        "÷"     : Operation.binaryOperation({ $0 / $1 }),
-        "−"     : Operation.binaryOperation({ $0 - $1 }),
-        "xʸ"    : Operation.binaryOperation({ pow($0, $1) }),
+        "×"     : Operation.binaryOperation({ $0 * $1 }, 1),
+        "+"     : Operation.binaryOperation({ $0 + $1 }, 0),
+        "÷"     : Operation.binaryOperation({ $0 / $1 }, 1),
+        "−"     : Operation.binaryOperation({ $0 - $1 }, 0),
+        "xʸ"    : Operation.binaryOperation(pow, 0),
 //        A1RT2
         "="     : Operation.equals
     ]
@@ -52,10 +54,11 @@ struct CalculatorBrain {
                 if accumulator != nil {
                     accumulator = function(accumulator!)
                 }
-            case .binaryOperation(let function):
+            case .binaryOperation(let function, _):
+//                call performPendingBinaryOperation() for chained binary operations to work
+                performPendingBinaryOperation()
                 if accumulator != nil {
                     pendingBinaryOperation = PendingBinaryOperation(function: function, firstOperand: accumulator!)
-                    accumulator = nil
                 }
             case .equals:
                 performPendingBinaryOperation()
@@ -81,13 +84,13 @@ struct CalculatorBrain {
         }
     }
     
-//    A1RT3
+//    A1RT5
     private var resultIsPending: Bool {
         get {
             return pendingBinaryOperation != nil
         }
     }
-//    A1RT3
+//    A1RT5
     
     mutating func setOperand(_ operand: Double) {
         accumulator = operand
