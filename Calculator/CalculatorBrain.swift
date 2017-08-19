@@ -10,38 +10,42 @@ import Foundation
 
 struct CalculatorBrain {
     
-    private var accumulator: Double?
+    //  Define accumulator as a Tuple of a Double? value and a String? description
+    private var accumulator: (value: Double?, description: String?)
     
-//    Int values for operation types are added for precedence detection in 
-//    generating the description String (A1RT6)
+    private var lastOperationPrecedence = Int.max
+    
+    //  Int values for operation types are added for precedence detection in
+    //  generating the description String (A1RT6)
     private enum Operation {
         case constant(Double)
-        case unaryOperation((Double) -> Double)
-        case binaryOperation((Double, Double) -> Double, Int)
+        case unaryOperation((Double) -> Double, (String) -> String)
+        case binaryOperation((Double, Double) -> Double, (String, String) -> String, Int)
         case equals
     }
+    
     
     private var operations: Dictionary<String,Operation> = [
         "π"     : Operation.constant(Double.pi),
         "e"     : Operation.constant(M_E),
-        "√"     : Operation.unaryOperation(sqrt),
-//        A1RT2 : New operations added
-        "∛"     : Operation.unaryOperation({ pow($0, 1/3) }),
-        "x⁻¹"   : Operation.unaryOperation({ pow($0, -1) }),
-        "x²"    : Operation.unaryOperation({ pow($0, 2) }),
-        "x³"    : Operation.unaryOperation({ pow($0, 3) }),
-        "cos"   : Operation.unaryOperation(cos),
-        "sin"   : Operation.unaryOperation(sin),
-        "tan"   : Operation.unaryOperation(tan),
-        "log₁₀" : Operation.unaryOperation(log10),
-        "eˣ"    : Operation.unaryOperation({ pow(M_E, $0) }),
-        "±"     : Operation.unaryOperation({ -$0 }),
-        "×"     : Operation.binaryOperation({ $0 * $1 }, 1),
-        "+"     : Operation.binaryOperation({ $0 + $1 }, 0),
-        "÷"     : Operation.binaryOperation({ $0 / $1 }, 1),
-        "−"     : Operation.binaryOperation({ $0 - $1 }, 0),
-        "xʸ"    : Operation.binaryOperation(pow, 0),
-//        A1RT2
+        "√"     : Operation.unaryOperation(sqrt, { "√" + "(" + $0 + ")" }),
+        //  A1RT2 : New operations added
+        "∛"     : Operation.unaryOperation({ pow($0, 1/3) }, { "∛" + "(" + $0 + ")" }),
+        "x⁻¹"   : Operation.unaryOperation({ pow($0, -1) }, { "(" + $0 + ")⁻¹" }),
+        "x²"    : Operation.unaryOperation({ pow($0, 2) }, { "(" + $0 + ")²" }),
+        "x³"    : Operation.unaryOperation({ pow($0, 3) }, { "(" + $0 + ")³" }),
+        "cos"   : Operation.unaryOperation(cos, { "cos(" + $0 + ")" }),
+        "sin"   : Operation.unaryOperation(sin, { "sin(" + $0 + ")" }),
+        "tan"   : Operation.unaryOperation(tan, { "tan(" + $0 + ")⁻¹" }),
+        "log₁₀" : Operation.unaryOperation(log10, { "log₁₀(" + $0 + ")" }),
+        "eˣ"    : Operation.unaryOperation({ pow(M_E, $0) }, { "e^(" + $0 + ")" }),
+        "±"     : Operation.unaryOperation({ -$0 }, { "±(" + $0 + ") " }),
+        "×"     : Operation.binaryOperation({ $0 * $1 }, { $0 + " × " + $1 }, 1),
+        "+"     : Operation.binaryOperation({ $0 + $1 }, { $0 + " + " + $1 }, 0),
+        "÷"     : Operation.binaryOperation({ $0 / $1 }, { $0 + " ÷ " + $1 }, 1),
+        "−"     : Operation.binaryOperation({ $0 - $1 }, { $0 + " − " + $1 }, 0),
+        "xʸ"    : Operation.binaryOperation(pow, { "(" + $0 + "^" + $1 + ")" }, 0),
+        //  A1RT2
         "="     : Operation.equals
     ]
     
@@ -49,16 +53,22 @@ struct CalculatorBrain {
         if let operation = operations[symbol] {
             switch operation {
             case .constant(let value):
-                accumulator = value
-            case .unaryOperation(let function):
-                if accumulator != nil {
-                    accumulator = function(accumulator!)
+                accumulator.value = value
+                accumulator.description = symbol
+            case .unaryOperation(let function, let descriptionFunction):
+                if accumulator.value != nil {
+                    accumulator.value = function(accumulator.value!)
+                    accumulator.description = descriptionFunction(accumulator.description!)
                 }
-            case .binaryOperation(let function, _):
-//                call performPendingBinaryOperation() for chained binary operations to work
+            case .binaryOperation(let function, let descriptionFunction, let currentOperationPrecedence):
+                //  call performPendingBinaryOperation() for chained binary operations to work
                 performPendingBinaryOperation()
-                if accumulator != nil {
-                    pendingBinaryOperation = PendingBinaryOperation(function: function, firstOperand: accumulator!)
+                if lastOperationPrecedence  < currentOperationPrecedence {
+                    accumulator.description = "(" + accumulator.description! + ")"
+                }
+                lastOperationPrecedence = currentOperationPrecedence
+                if accumulator.value != nil {
+                    pendingBinaryOperation = PendingBinaryOperation(function: function, firstOperand: accumulator.value!, descriptionFunction: descriptionFunction, firstOperandDescription: accumulator.description!)
                 }
             case .equals:
                 performPendingBinaryOperation()
@@ -67,8 +77,9 @@ struct CalculatorBrain {
     }
     
     private mutating func performPendingBinaryOperation() {
-        if pendingBinaryOperation != nil && accumulator != nil {
-            accumulator = pendingBinaryOperation!.perform(with: accumulator!)
+        if pendingBinaryOperation != nil && accumulator.value != nil {
+            accumulator.value = pendingBinaryOperation!.perform(with: accumulator.value!)
+            accumulator.description = pendingBinaryOperation!.describe(with: accumulator.description!)
             pendingBinaryOperation = nil
         }
     }
@@ -82,24 +93,44 @@ struct CalculatorBrain {
         func perform(with secondOperand: Double) -> Double {
             return function(firstOperand, secondOperand)
         }
+        
+        let descriptionFunction: (String, String) -> String
+        let firstOperandDescription: String
+        
+        func describe(with secondOperandDescription: String) -> String {
+            return descriptionFunction(firstOperandDescription, secondOperandDescription)
+        }
     }
     
-//    A1RT5
-    private var resultIsPending: Bool {
+    mutating func setOperand(_ operand: Double) {
+        accumulator.value = operand
+        accumulator.description = String(format:"%g", operand) //
+    }
+    
+    //  A1RT5
+    var resultIsPending: Bool {
         get {
             return pendingBinaryOperation != nil
         }
     }
-//    A1RT5
-    
-    mutating func setOperand(_ operand: Double) {
-        accumulator = operand
-    }
+    //  A1RT5
     
     var result: Double? {
         get {
-            return accumulator
+            return accumulator.value
         }
     }
+    
+    //  A1RT6
+    var description: String {
+        get {
+            if pendingBinaryOperation == nil {
+                return accumulator.description!
+            } else {
+                return pendingBinaryOperation!.describe(with: "")
+            }
+        }
+    }
+    //  A1RT6
     
 }

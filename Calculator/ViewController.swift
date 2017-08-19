@@ -9,8 +9,9 @@
 import UIKit
 
 class ViewController: UIViewController {
-
+    
     @IBOutlet weak var display: UILabel!
+    @IBOutlet weak var history: UILabel!
     
     var userIsInTheMiddleOfTyping = false
     
@@ -18,11 +19,11 @@ class ViewController: UIViewController {
         let digit = sender.currentTitle!
         if userIsInTheMiddleOfTyping {
             let textCurrentlyInDisplay = display.text!
-//            A1RT1
+            //  A1RT1
             if !(textCurrentlyInDisplay.contains(".") && digit == ".") {
                 display.text = textCurrentlyInDisplay + digit
             }
-//            A1RT1
+            //  A1RT1
         } else {
             display.text = digit
             userIsInTheMiddleOfTyping = true
@@ -35,6 +36,7 @@ class ViewController: UIViewController {
         }
         set {
             display.text = String(newValue)
+            history.text = brain.description + (brain.resultIsPending ? "..." : " =")
         }
     }
     
