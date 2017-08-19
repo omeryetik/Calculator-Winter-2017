@@ -69,6 +69,8 @@ struct CalculatorBrain {
                 lastOperationPrecedence = currentOperationPrecedence
                 if accumulator.value != nil {
                     pendingBinaryOperation = PendingBinaryOperation(function: function, firstOperand: accumulator.value!, descriptionFunction: descriptionFunction, firstOperandDescription: accumulator.description!)
+                    accumulator.value = nil
+                    accumulator.description = nil
                 }
             case .equals:
                 performPendingBinaryOperation()
@@ -122,15 +124,21 @@ struct CalculatorBrain {
     }
     
     //  A1RT6
-    var description: String {
+    var description: String? {
         get {
             if pendingBinaryOperation == nil {
                 return accumulator.description!
             } else {
-                return pendingBinaryOperation!.describe(with: "")
+                return pendingBinaryOperation!.describe(with: accumulator.description ?? "")
             }
         }
     }
     //  A1RT6
+    
+    //  A1RT7
+    mutating func reset() {
+        self = CalculatorBrain()
+    }
+    //  A1RT7
     
 }
