@@ -57,11 +57,28 @@ class ViewController: UIViewController {
         }
     }
     
+    //  A1RT8
     @IBAction func clear() {
         brain.reset()
         display.text = "0"
         history.text = " "
         userIsInTheMiddleOfTyping = false
     }
+    //  A1RT8
+    
+    //  A1ECT1
+    @IBAction func backspace() {
+        if var textCurrentlyInDisplay = display.text {
+            if textCurrentlyInDisplay.characters.count > 1 {
+                textCurrentlyInDisplay.characters.removeLast()
+            } else {
+                textCurrentlyInDisplay = "0"
+                userIsInTheMiddleOfTyping = false
+            }
+            display.text = textCurrentlyInDisplay
+        }
+    }
+    //  A1ECT1
+
 }
 
