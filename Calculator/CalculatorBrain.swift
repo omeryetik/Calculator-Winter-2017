@@ -19,6 +19,9 @@ struct CalculatorBrain {
     //  generating the description String (A1RT6)
     private enum Operation {
         case constant(Double)
+        //  A1ECT3
+        case nullaryOperation(()-> Double, (Double) -> String)
+        //  A1ECT3
         case unaryOperation((Double) -> Double, (String) -> String)
         case binaryOperation((Double, Double) -> Double, (String, String) -> String, Int)
         case equals
@@ -46,6 +49,7 @@ struct CalculatorBrain {
         "−"     : Operation.binaryOperation({ $0 - $1 }, { $0 + " − " + $1 }, 0),
         "xʸ"    : Operation.binaryOperation(pow, { "(" + $0 + "^" + $1 + ")" }, 0),
         //  A1RT2
+        "rand"  : Operation.nullaryOperation({ Double(arc4random())/Double(UInt32.max) }, { numberFormatter.string(from: NSNumber(value: $0))! }),
         "="     : Operation.equals
     ]
     
@@ -55,11 +59,16 @@ struct CalculatorBrain {
             case .constant(let value):
                 accumulator.value = value
                 accumulator.description = symbol
+            case .nullaryOperation(let function, let descriptionFunction):
+                accumulator.value = function()
+                accumulator.description = descriptionFunction(accumulator.value!)
+            //  A1ECT3
             case .unaryOperation(let function, let descriptionFunction):
                 if accumulator.value != nil {
                     accumulator.value = function(accumulator.value!)
                     accumulator.description = descriptionFunction(accumulator.description!)
                 }
+            //  A1ECT3
             case .binaryOperation(let function, let descriptionFunction, let currentOperationPrecedence):
                 //  call performPendingBinaryOperation() for chained binary operations to work
                 performPendingBinaryOperation()
