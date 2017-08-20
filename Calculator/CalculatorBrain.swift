@@ -106,7 +106,7 @@ struct CalculatorBrain {
     
     mutating func setOperand(_ operand: Double) {
         accumulator.value = operand
-        accumulator.description = String(format:"%g", operand) //
+        accumulator.description = numberFormatter.string(from: NSNumber(value:accumulator.value!))
     }
     
     //  A1RT5

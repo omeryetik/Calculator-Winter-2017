@@ -8,12 +8,24 @@
 
 import UIKit
 
+//  A1ECT2
+var numberFormatter: NumberFormatter {
+    let formatter = NumberFormatter()
+    formatter.minimumIntegerDigits = 1
+    formatter.minimumFractionDigits = 0
+    formatter.maximumFractionDigits = 6
+    formatter.notANumberSymbol = "Error"
+    return formatter
+}
+//  A1ECT2
+
 class ViewController: UIViewController {
     
     @IBOutlet weak var display: UILabel!
     @IBOutlet weak var history: UILabel!
     
     var userIsInTheMiddleOfTyping = false
+    
     
     @IBAction func touchDigit(_ sender: UIButton) {
         let digit = sender.currentTitle!
@@ -35,7 +47,7 @@ class ViewController: UIViewController {
             return Double(display.text!)!
         }
         set {
-            display.text = String(format: "%g", newValue)
+            display.text = numberFormatter.string(from: NSNumber(value:newValue))
         }
     }
     
