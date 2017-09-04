@@ -6,7 +6,6 @@
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="12089"/>
-        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -23,7 +22,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="DWA-pr-5gC">
-                                <rect key="frame" x="104" y="249" width="166.5" height="169"/>
+                                <rect key="frame" x="104.5" y="249" width="166.5" height="169"/>
                                 <subviews>
                                     <imageView userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Calculator-icon" translatesAutoresizingMaskIntoConstraints="NO" id="2Og-hY-e4u">
                                         <rect key="frame" x="0.0" y="0.0" width="166.5" height="128"/>
@@ -39,10 +38,8 @@
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
-                            <constraint firstItem="xb3-aO-Qok" firstAttribute="top" secondItem="DWA-pr-5gC" secondAttribute="bottom" constant="249" id="3te-8z-FP0"/>
-                            <constraint firstItem="DWA-pr-5gC" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leadingMargin" constant="88" id="N3F-wS-TP5"/>
-                            <constraint firstItem="DWA-pr-5gC" firstAttribute="top" secondItem="Llm-lL-Icb" secondAttribute="bottom" constant="229" id="UmV-ZA-CSa"/>
-                            <constraint firstAttribute="trailingMargin" secondItem="DWA-pr-5gC" secondAttribute="trailing" constant="88.5" id="fAN-zZ-3bw"/>
+                            <constraint firstItem="DWA-pr-5gC" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="0A4-Io-DvB"/>
+                            <constraint firstItem="DWA-pr-5gC" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="JSE-0d-73G"/>
                         </constraints>
                     </view>
                 </viewController>
