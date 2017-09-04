@@ -8,6 +8,14 @@
 
 import Foundation
 
+//  Global Dictionary to keep variable values for the Calculator
+//  This acts as a part of the Model in the Calculator MVC,
+//  together with the CalculatorBrain
+
+var variables = Dictionary<String,Double>()
+
+// The CalculatorBrain struct
+
 struct CalculatorBrain {
     
     // MARK: Public Variables
@@ -17,14 +25,14 @@ struct CalculatorBrain {
     @available(iOS, deprecated, message: "Will be dropped. Use evaluate(:) function instead")
     var resultIsPending: Bool {
         get {
-            return evaluate(using: valueForVariable).isPending
+            return evaluate(using: nil).isPending
         }
     }  //
     
     @available(iOS, deprecated, message: "Will be dropped. Use evaluate(:) function instead")
     var result: Double? {
         get {
-            return evaluate(using: valueForVariable).result
+            return evaluate(using: nil).result
         }
     }
     
@@ -32,7 +40,7 @@ struct CalculatorBrain {
     @available(iOS, deprecated, message: "Will be dropped. Use evaluate(:) function instead")
     var description: String? {
         get {
-            return evaluate(using: valueForVariable).description
+            return evaluate(using: nil).description
         }
     }  //
     
@@ -51,19 +59,12 @@ struct CalculatorBrain {
     
     private var internalProgram = [ProgramItem]()
     
-    //  Initialize the variables Dictionary as an empty Dictionary of [String:Double]
-    private var valueForVariable = Dictionary<String, Double>()
-    
-    //
-    
-    
     //  Int values for operation types are added for precedence detection in
     //  generating the description String (A1RT6)
     private enum Operation {
         case constant(Double)
         //  A1ECT3
-        case nullaryOperation(()-> Double, (Double) -> String)
-        //
+        case nullaryOperation(()-> Double, (Double) -> String) //
         case unaryOperation((Double) -> Double, (String) -> String)
         case binaryOperation((Double, Double) -> Double, (String, String) -> String, Int)
         case equals
@@ -90,8 +91,7 @@ struct CalculatorBrain {
         "÷"     : Operation.binaryOperation({ $0 / $1 }, { $0 + " ÷ " + $1 }, 1),
         "−"     : Operation.binaryOperation({ $0 - $1 }, { $0 + " − " + $1 }, 0),
         "xʸ"    : Operation.binaryOperation(pow, { "(" + $0 + "^" + $1 + ")" }, 0),
-        //
-        "rand"  : Operation.nullaryOperation({ Double(arc4random())/Double(UInt32.max) }, { numberFormatter.string(from: NSNumber(value: $0))! }),
+        "rand"  : Operation.nullaryOperation({ Double(arc4random())/Double(UInt32.max) }, { numberFormatter.string(from: NSNumber(value: $0))! }), //
         "="     : Operation.equals
     ]
     
@@ -148,8 +148,10 @@ struct CalculatorBrain {
         
         
         // MARK: Nested functions in evaluate(:)
+        //
         //  Make performOperation(_ symbol: String) a nested function enclosed in
         //  evaluate function
+        //
         func performOperation(_ symbol: String) {
             if let operation = operations[symbol] {
                 switch operation {
@@ -195,6 +197,7 @@ struct CalculatorBrain {
         }
         
         // MARK: Main functionality of evaluate(:) function
+        
         for programItem in internalProgram {
             switch programItem {
             case .aDouble(let number):
@@ -203,10 +206,10 @@ struct CalculatorBrain {
             case .anOperation(let operation):
                 performOperation(operation)
             case .aVariable(let variable):
-                accumulator.value = valueForVariable[variable]
+                accumulator.value = variables?[variable] ?? 0
+                accumulator.description = variable
             }
         }
-        
         
         // MARK: Return values for evaluate(:) function
         
@@ -226,7 +229,7 @@ struct CalculatorBrain {
         var description: String {
             get {
                 if pendingBinaryOperation == nil {
-                    return accumulator.description!
+                    return accumulator.description ?? " "
                 } else {
                     return pendingBinaryOperation!.describe(with: accumulator.description ?? "")
                 }
@@ -242,6 +245,13 @@ struct CalculatorBrain {
     mutating func reset() {
         self = CalculatorBrain()
     }  //
+    
+    mutating func undo() {
+        guard internalProgram.isEmpty else {
+            internalProgram.removeLast()
+            return
+        }
+    }
     
 }
 
