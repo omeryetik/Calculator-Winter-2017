@@ -15,6 +15,8 @@ var numberFormatter: NumberFormatter {
     formatter.minimumFractionDigits = 0
     formatter.maximumFractionDigits = 6
     formatter.notANumberSymbol = "Error"
+    formatter.negativeInfinitySymbol = "Error"
+    formatter.positiveInfinitySymbol = "Error"
     return formatter
 }   //
 
@@ -89,10 +91,14 @@ class ViewController: UIViewController {
             }
         }
         
-        //  if update is being done due to an undo operation, no "=" should be shown in the 
+        //  if update is being done due to an undo operation, no "=" should be shown in the
         //  display.
-        history.text = evaluationResult.description + (evaluationResult.isPending ? " ..." :
-            !userDidUndoLastOperation ? " =" : "")
+        if let errorMessage = evaluationResult.error {
+            history.text = errorMessage
+        } else {
+            history.text = evaluationResult.description + (evaluationResult.isPending ? " ..." :
+                !userDidUndoLastOperation ? " =" : "")
+        }
         
         //  Reset the undo operation tracking variable in case it was set to true.
         //  Meaningful only if the update method was called due to an undo operation.
@@ -107,17 +113,19 @@ class ViewController: UIViewController {
         if let displayValueAsString = numberFormatter.string(from: NSNumber(value:displayValue)) {
             memory.text = "M = " + displayValueAsString
         }
-        if let result = brain.evaluate(using: variables).result {
-            displayValue = result
-        }
+//        if let result = brain.evaluate(using: variables).result {
+//            displayValue = result
+//        }
+        updateResultAndUI()
     }
     
     //  Corresponds to M button
     @IBAction func getVariable() {
         brain.setOperand(variable: "M")
-        if let result = brain.evaluate(using: variables).result {
-            displayValue = result
-        }
+//        if let result = brain.evaluate(using: variables).result {
+//            displayValue = result
+//        }
+        updateResultAndUI()
     }
     
     //  A1RT8

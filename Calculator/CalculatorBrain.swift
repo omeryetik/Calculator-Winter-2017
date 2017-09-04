@@ -65,32 +65,33 @@ struct CalculatorBrain {
         case constant(Double)
         //  A1ECT3
         case nullaryOperation(()-> Double, (Double) -> String) //
-        case unaryOperation((Double) -> Double, (String) -> String)
-        case binaryOperation((Double, Double) -> Double, (String, String) -> String, Int)
+        case unaryOperation((Double) -> Double, (String) -> String, ((Double) -> String?)?)
+        case binaryOperation((Double, Double) -> Double, (String, String) -> String, ((Double, Double) -> String?)? , Int)
         case equals
     }
     
+
     
     private var operations: Dictionary<String,Operation> = [
         "π"     : Operation.constant(Double.pi),
         "e"     : Operation.constant(M_E),
-        "√"     : Operation.unaryOperation(sqrt, { "√" + "(" + $0 + ")" }),
+        "√"     : Operation.unaryOperation(sqrt, { "√" + "(" + $0 + ")" }, { $0 < 0 ? "√ not allowed for negative numbers!" : nil }),
         //  A1RT2 : New operations added
-        "∛"     : Operation.unaryOperation({ pow($0, 1/3) }, { "∛" + "(" + $0 + ")" }),
-        "x⁻¹"   : Operation.unaryOperation({ pow($0, -1) }, { "(" + $0 + ")⁻¹" }),
-        "x²"    : Operation.unaryOperation({ pow($0, 2) }, { "(" + $0 + ")²" }),
-        "x³"    : Operation.unaryOperation({ pow($0, 3) }, { "(" + $0 + ")³" }),
-        "cos"   : Operation.unaryOperation(cos, { "cos(" + $0 + ")" }),
-        "sin"   : Operation.unaryOperation(sin, { "sin(" + $0 + ")" }),
-        "tan"   : Operation.unaryOperation(tan, { "tan(" + $0 + ")⁻¹" }),
-        "log₁₀" : Operation.unaryOperation(log10, { "log₁₀(" + $0 + ")" }),
-        "eˣ"    : Operation.unaryOperation({ pow(M_E, $0) }, { "e^(" + $0 + ")" }),
-        "±"     : Operation.unaryOperation({ -$0 }, { "±(" + $0 + ") " }),
-        "×"     : Operation.binaryOperation({ $0 * $1 }, { $0 + " × " + $1 }, 1),
-        "+"     : Operation.binaryOperation({ $0 + $1 }, { $0 + " + " + $1 }, 0),
-        "÷"     : Operation.binaryOperation({ $0 / $1 }, { $0 + " ÷ " + $1 }, 1),
-        "−"     : Operation.binaryOperation({ $0 - $1 }, { $0 + " − " + $1 }, 0),
-        "xʸ"    : Operation.binaryOperation(pow, { "(" + $0 + "^" + $1 + ")" }, 0),
+        "∛"     : Operation.unaryOperation({ pow($0, 1/3) }, { "∛" + "(" + $0 + ")" }, nil),
+        "x⁻¹"   : Operation.unaryOperation({ pow($0, -1) }, { "(" + $0 + ")⁻¹" }, { $0 == 0 ? "Division by zero!" : nil }),
+        "x²"    : Operation.unaryOperation({ pow($0, 2) }, { "(" + $0 + ")²" }, nil),
+        "x³"    : Operation.unaryOperation({ pow($0, 3) }, { "(" + $0 + ")³" }, nil),
+        "cos"   : Operation.unaryOperation(cos, { "cos(" + $0 + ")" }, nil),
+        "sin"   : Operation.unaryOperation(sin, { "sin(" + $0 + ")" }, nil),
+        "tan"   : Operation.unaryOperation(tan, { "tan(" + $0 + ")⁻¹" }, nil),
+        "log₁₀" : Operation.unaryOperation(log10, { "log₁₀(" + $0 + ")" }, { $0 <= 0 ? "Logarithm operand should be > 0 !" : nil }),
+        "eˣ"    : Operation.unaryOperation({ pow(M_E, $0) }, { "e^(" + $0 + ")" }, nil),
+        "±"     : Operation.unaryOperation({ -$0 }, { "±(" + $0 + ") " }, nil),
+        "×"     : Operation.binaryOperation({ $0 * $1 }, { $0 + " × " + $1 }, nil, 1),
+        "+"     : Operation.binaryOperation({ $0 + $1 }, { $0 + " + " + $1 }, nil, 0),
+        "÷"     : Operation.binaryOperation({ $0 / $1 }, { $0 + " ÷ " + $1 }, { $1 == 0 ? "Division by zero!" : nil }, 1),
+        "−"     : Operation.binaryOperation({ $0 - $1 }, { $0 + " − " + $1 }, nil, 0),
+        "xʸ"    : Operation.binaryOperation(pow, { "(" + $0 + "^" + $1 + ")" }, nil, 0),
         "rand"  : Operation.nullaryOperation({ Double(arc4random())/Double(UInt32.max) }, { numberFormatter.string(from: NSNumber(value: $0))! }), //
         "="     : Operation.equals
     ]
@@ -109,6 +110,12 @@ struct CalculatorBrain {
         
         func describe(with secondOperandDescription: String) -> String {
             return descriptionFunction(firstOperandDescription, secondOperandDescription)
+        }
+        
+        let errorFunction: ((Double, Double) -> String?)?
+        
+        func validate(for secondOperand: Double) -> String? {
+            return errorFunction?(firstOperand, secondOperand)
         }
     }
     
@@ -134,7 +141,7 @@ struct CalculatorBrain {
         //
     }
     
-    func evaluate(using variables: Dictionary<String,Double>? = nil) -> (result: Double?, isPending: Bool, description: String) {
+    func evaluate(using variables: Dictionary<String,Double>? = nil) -> (result: Double?, isPending: Bool, description: String, error: String?) {
         
         // MARK: CalculatorBrain variables as local variables in evaluate(:) function
         //
@@ -146,6 +153,7 @@ struct CalculatorBrain {
         
         var pendingBinaryOperation: PendingBinaryOperation?
         
+        var errorMessage: String?
         
         // MARK: Nested functions in evaluate(:)
         //
@@ -162,13 +170,14 @@ struct CalculatorBrain {
                     accumulator.value = function()
                     accumulator.description = descriptionFunction(accumulator.value!)
                 //  A1ECT3
-                case .unaryOperation(let function, let descriptionFunction):
+                case .unaryOperation(let function, let descriptionFunction, let errorFunction):
                     if accumulator.value != nil {
+                        errorMessage = errorFunction?(accumulator.value!)
                         accumulator.value = function(accumulator.value!)
                         accumulator.description = descriptionFunction(accumulator.description!)
                     }
                 //
-                case .binaryOperation(let function, let descriptionFunction, let currentOperationPrecedence):
+                case .binaryOperation(let function, let descriptionFunction, let errorFunction, let currentOperationPrecedence):
                     //  call performPendingBinaryOperation() for chained binary operations to work
                     performPendingBinaryOperation()
                     if lastOperationPrecedence  < currentOperationPrecedence {
@@ -176,7 +185,7 @@ struct CalculatorBrain {
                     }
                     lastOperationPrecedence = currentOperationPrecedence
                     if accumulator.value != nil {
-                        pendingBinaryOperation = PendingBinaryOperation(function: function, firstOperand: accumulator.value!, descriptionFunction: descriptionFunction, firstOperandDescription: accumulator.description!)
+                        pendingBinaryOperation = PendingBinaryOperation(function: function, firstOperand: accumulator.value!, descriptionFunction: descriptionFunction, firstOperandDescription: accumulator.description!, errorFunction: errorFunction)
                         accumulator.value = nil
                         accumulator.description = nil
                     }
@@ -190,6 +199,7 @@ struct CalculatorBrain {
         //  evaluate function
         func performPendingBinaryOperation() {
             if pendingBinaryOperation != nil && accumulator.value != nil {
+                errorMessage = pendingBinaryOperation!.validate(for: accumulator.value!)
                 accumulator.value = pendingBinaryOperation!.perform(with: accumulator.value!)
                 accumulator.description = pendingBinaryOperation!.describe(with: accumulator.description!)
                 pendingBinaryOperation = nil
@@ -237,7 +247,13 @@ struct CalculatorBrain {
         }
         //
         
-        return (result, isPending, description)
+        var error: String? {
+            get {
+                return errorMessage
+            }
+        }
+        
+        return (result, isPending, description, error)
     }   //  A2RT3-4 : Variable support - End
 
     
