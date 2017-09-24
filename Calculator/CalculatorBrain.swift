@@ -18,6 +18,10 @@ func multiply(op1: Double, op2: Double) -> Double {
 
 struct CalculatorBrain {
     
+    mutating func addUnaryOperation(named symbol: String, _ operation: @escaping (Double) -> Double) {
+        operations[symbol] = Operation.unaryOperation(operation)
+    }
+    
     private var accumulator: Double?
     
     private enum Operation {
